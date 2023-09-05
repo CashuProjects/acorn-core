@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "description": "support library for handling Cashu eCash payments in the backend.",
   "main": "dist/lib/index.js",
-  "module": "dist/lib/index.js",
   "scripts": {
     "compile": "rm -rf dist/lib && tsc",
     "test": "jest",
@@ -31,6 +30,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@cashu/cashu-ts": "^0.8.0-rc.6"
+    "@cashu/cashu-ts": "^0.8.0-rc.6",
+    "sqlite3": "^5.1.6"
   }
 }
