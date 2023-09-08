@@ -1,26 +1,26 @@
-import {CustomerId} from './customer.js'
+import {CustomerID} from './customer.js'
 
 import { generateRandomString } from '../util.js'
 
-type PaymentId = string
+type PaymentID = string
 
 class Payment {
-    PaymentId: PaymentId;
-    customerId: CustomerId;
+    paymentID: PaymentId;
+    customerID: CustomerID;
     confirmed: boolean;
     amount: number;
 
-    constructor(customerId: CustomerId, amount: number) {
-        this.PaymentId = generateRandomString(10);
-        this.customerId = customerId
+    constructor(customerID: CustomerID, amount: number) {
+        this.paymentID = generateRandomString(10);
+        this.customerID = customerID
         this.confirmed = false
         this.amount = amount
     }
 
     serialize() {
         return {
-            paymentId: this.paymentId,
-            customerId: this.customerId,
+            paymentID: this.paymentID,
+            customerID: this.customerID,
             confirmed: this.confirmed,
             amount: this.amount
         }
