@@ -139,6 +139,74 @@ class BaseModel {
     }
 }
 
+export class TokenModel extends BaseModel {
+    constructor (db: Database) {
+        this._table = 'Tokens'
+        this._schema = `CREATE TABLE ${this._table}
+        (mintUrl VARCHAR NOT NULL,
+        proofID INTEGER NOT NULL,
+        memo VARCHAR,
+        UNIQUE (proofID),
+        FOREIGN KEY (proofID) REFERENCES Proofs(rowid))`
+        this._primary_key = false
+        this._columns = [
+            {
+                name: 'mintUrl',
+                primay_key: false,
+                not_null: true
+            },
+            {
+                name: 'proofID',
+                primay_key: false,
+                not_null: true
+            },
+            {
+                name: 'memo',
+                primay_key: false,
+                not_null: true
+            }
+        ]
+
+        super(db)
+    }
+}
+
+export class ProofsModel extends BaseModel {
+    constructor (db: Database) {
+        this._table = 'Proofs'
+        this._schema = `CREATE TABLE ${this._table}
+        (id VARCHAR,
+        amount INT NOT NULL,
+        secret VARCHAR NOT NULL,
+        C VARCHAR NOT NULL)`
+        this._primary_key = false
+        this._columns = [
+            {
+                name: 'id',
+                primay_key: false,
+                not_null: true
+            },
+            {
+                name: 'amount',
+                primay_key: false,
+                not_null: true
+            },
+            {
+                name: 'secret',
+                primay_key: false,
+                not_null: true
+            },
+            {
+                name: 'C',
+                primay_key: false,
+                not_null: true
+            }
+        ]
+
+        super(db)
+    }
+}
+
 export class CustomerModel extends BaseModel {
     constructor (db: Database) {
         this._table = 'Customers'
@@ -153,27 +221,27 @@ export class CustomerModel extends BaseModel {
         this._primary_key = false
         this._columns = [
             {
-                name: customerID,
+                name: 'customerID',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: firstName,
+                name: 'firstName',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: middleName,
+                name: 'middleName',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: lastName,
+                name: 'lastName',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: email,
+                name: 'email',
                 primay_key: false,
                 not_null: false
             }
@@ -196,22 +264,22 @@ export class PaymentModel extends BaseModel {
         this._primary_key = false
         this._columns = [
             {
-                name: PaymentID,
+                name: 'PaymentID',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: customerID,
+                name: 'customerID',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: confirmed,
+                name: 'confirmed',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: amount,
+                name: 'amount',
                 primay_key: false,
                 not_null: true
             }
@@ -235,32 +303,32 @@ export class ItemsModel extends BaseModel {
         this._primary_key = false
         this._columns = [
             {
-                name: itemID,
+                name: 'itemID',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: price,
+                name: 'price',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: quantity,
+                name: 'quantity',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: description,
+                name: 'description',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: createdAt,
+                name: 'createdAt',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: amount,
+                name: 'amount',
                 primay_key: false,
                 not_null: true
             }
@@ -291,57 +359,57 @@ export class InvoiceModel extends BaseModel {
         this._primary_key = false
         this._columns = [
             {
-                name: invoiceID,
+                name: 'invoiceID',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: totalSum,
+                name: 'totalSum',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: description,
+                name: 'description',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: hosted_invoice_url,
+                name: 'hosted_invoice_url',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: itemID,
+                name: 'itemID',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: paymentID,
+                name: 'paymentID',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: createdAt,
+                name: 'createdAt',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: clearedAt,
+                name: 'clearedAt',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: amount_paid,
+                name: 'amount_paid',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: amount_due,
+                name: 'amount_due',
                 primay_key: false,
                 not_null: true
             },
             {
-                name: status,
+                name: 'status',
                 primay_key: false,
                 not_null: true
             }
