@@ -1,4 +1,4 @@
-import { Database } from 'sqlite3'
+import { Database } from '../db.js'
 import { CustomerID } from './customer.js'
 import { PaymentID } from './payment.js'
 import { InvoiceID } from './invoice.js'
@@ -9,24 +9,24 @@ type Columns = {
     not_null: boolean
 }
 
-class BaseModel {
-    _table: string
-    _columns: Columns[]
-    _schema: string
-    _primary_key: boolean
+abstract class BaseModel {
+    private _table: string
+    private _columns: Columns[]
+    private _schema: string
+    private _primary_key: boolean
     db: Database
 
     constructor (db: Database) {
-        this.db = db
-        this.create()
+        this.db = db.get_db()
+        this._create()
 
     }
 
-    create() {
+    private _create() {
         this.db.exec(this._schema)
     }
 
-    insert(data: object) {
+    public insert(data: object) {
         return new Promise((resolve, reject) => {
             sql = null
             values = []
@@ -41,7 +41,7 @@ class BaseModel {
                         primay_key_passedin = true
                 }
                 else if (primay_key or not_null)
-                    throw new Error(`'${name}' is required but undefined was passed in.`)
+                    throw new Error(`'${name}' is required but was not passed in.`)
                 else
                     query_placeholder += 'null,'
             }
@@ -54,11 +54,12 @@ class BaseModel {
                 if (err) reject(err)
 
                 //else do something with this.lastID
+                resolve(this.lastID)
             })
         })
     }
 
-    get(columns: string[], condition: object) {
+    public get(condition?: object, columns?: string[]) {
         return new Promise((resolve, reject) => {
             sql = null
             sql_condition = ''
@@ -79,12 +80,21 @@ class BaseModel {
             this.db.all(sql, condition, function(err, rows) {
                 if (err) reject(err)
 
-                resolve(rows)
+                result = []
+                for (row of rows) {
+                    row_obj = {}
+                    for (i in row) {
+                        row_obj[columns[i]] = row[i]
+                    }
+
+                    result.push(row_obj)
+                }
+                resolve(result)
             })
         }
     }
 
-    update(data: object, condition: object) {
+    public update(data: object, condition?: object) {
         return new Promise((resolve, reject) => {
             sql = null
             sql_condition = ''
@@ -114,7 +124,7 @@ class BaseModel {
         }
     }
 
-    delete(condition: object) {
+    public delete(condition?: object) {
         return new Promise((resolve, reject) => {
             sql = null
             sql_condition = ''
@@ -139,10 +149,12 @@ class BaseModel {
     }
 }
 
-export class TokenModel extends BaseModel {
+class TokenModel extends BaseModel {
     constructor (db: Database) {
+        super(db)
+
         this._table = 'Tokens'
-        this._schema = `CREATE TABLE ${this._table}
+        this._schema = `CREATE TABLE IF NOT EXISTS ${this._table}
         (mintUrl VARCHAR NOT NULL,
         proofID INTEGER NOT NULL,
         memo VARCHAR,
@@ -163,19 +175,19 @@ export class TokenModel extends BaseModel {
             {
                 name: 'memo',
                 primay_key: false,
-                not_null: true
+                not_null: false
             }
         ]
-
-        super(db)
     }
 }
 
-export class ProofsModel extends BaseModel {
+class ProofsModel extends BaseModel {
     constructor (db: Database) {
+        super(db)
+
         this._table = 'Proofs'
-        this._schema = `CREATE TABLE ${this._table}
-        (id VARCHAR,
+        this._schema = `CREATE TABLE IF NOT EXISTS ${this._table}
+        (id VARCHAR NOT NULL,
         amount INT NOT NULL,
         secret VARCHAR NOT NULL,
         C VARCHAR NOT NULL)`
@@ -202,15 +214,15 @@ export class ProofsModel extends BaseModel {
                 not_null: true
             }
         ]
-
-        super(db)
     }
 }
 
-export class CustomerModel extends BaseModel {
+class CustomerModel extends BaseModel {
     constructor (db: Database) {
+        super(db)
+
         this._table = 'Customers'
-        this._schema = `CREATE TABLE ${this._table}
+        this._schema = `CREATE TABLE IF NOT EXISTS ${this._table}
         (customerID VARCHAR NOT NULL,
         firstName VARCHAR NOT NULL,
         middleName VARCHAR NOT NULL,
@@ -246,21 +258,24 @@ export class CustomerModel extends BaseModel {
                 not_null: false
             }
         ]
-
-        super(db)
     }
 }
 
-export class PaymentModel extends BaseModel {
+class PaymentModel extends BaseModel {
     constructor (db: Database) {
+        super(db)
+
         this._table = 'Payments'
-        this._schema = `CREATE TABLE ${this._table}
+        this._schema = `CREATE TABLE IF NOT EXISTS ${this._table}
         (paymentID VARCHAR NOT NULL,
         customerID VARCHAR NOT NULL,
+        invoiceID VARCHAR,
         confirmed BOOL NOT NULL,
         amount INT NOT NULL,
+        paidAt INT,
         UNIQUE (paymentID),
-        FOREIGN KEY (customerID) REFERENCES Customers(customerID))`
+        FOREIGN KEY (customerID) REFERENCES Customers(customerID),
+        FOREIGN KEY (invoiceID) REFERENCES Invoice(invoiceID))`
         this._primary_key = false
         this._columns = [
             {
@@ -274,6 +289,11 @@ export class PaymentModel extends BaseModel {
                 not_null: true
             },
             {
+                name: 'invoiceID',
+                primay_key: false,
+                not_null: false
+            },
+            {
                 name: 'confirmed',
                 primay_key: false,
                 not_null: true
@@ -282,28 +302,40 @@ export class PaymentModel extends BaseModel {
                 name: 'amount',
                 primay_key: false,
                 not_null: true
+            },
+            {
+                name: 'paidAt',
+                primay_key: false,
+                not_null: false
             }
         ]
-
-        super(db)
     }
 }
 
-export class ItemsModel extends BaseModel {
+class ItemsModel extends BaseModel {
     constructor (db: Database) {
+        super(db)
+
         this._table = 'Items'
-        this._schema = `CREATE TABLE ${this._table}
+        this._schema = `CREATE TABLE IF NOT EXISTS ${this._table}
         (itemID VARCHAR NOT NULL,
+        invoiceID VARCHAR NOT NULL,
         price INT NOT NULL,
         quantity INT NOT NULL,
         description VARCHAR NOT NULL,
         createdAt INT NOT NULL,
-        updatedAt INT NOT NULL,
-        UNIQUE (itemID))`
+        updatedAt INT,
+        UNIQUE (itemID),
+        FOREIGN KEY (invoiceID) REFERENCES Invoice(invoiceID))`
         this._primary_key = false
         this._columns = [
             {
                 name: 'itemID',
+                primay_key: false,
+                not_null: true
+            },
+            {
+                name: 'invoiceID',
                 primay_key: false,
                 not_null: true
             },
@@ -328,26 +360,29 @@ export class ItemsModel extends BaseModel {
                 not_null: true
             },
             {
+                name: 'updatedAt',
+                primay_key: false,
+                not_null: false
+            },
+            {
                 name: 'amount',
                 primay_key: false,
                 not_null: true
             }
         ]
-
-        super(db)
     }
 }
 
-export class InvoiceModel extends BaseModel {
+class InvoiceModel extends BaseModel {
     constructor (db: Database) {
+        super(db)
+
         this._table = 'Invoice'
-        this._schema = `CREATE TABLE ${this._table}
+        this._schema = `CREATE TABLE IF NOT EXISTS ${this._table}
         (invoiceID VARCHAR NOT NULL,
         totalSum INT NOT NULL,
         description VARCHAR NOT NULL,
-        hosted_invoice_url VARCHAR NOT NULL,
-        itemID VARCHAR NOT NULL,
-        paymentID VARCHAR NOT NULL,
+        hosted_invoice_url VARCHAR,
         createdAt INT NOT NULL,
         clearedAt INT NOT NULL,
         amount_paid INT NOT NULL,
@@ -376,17 +411,7 @@ export class InvoiceModel extends BaseModel {
             {
                 name: 'hosted_invoice_url',
                 primay_key: false,
-                not_null: true
-            },
-            {
-                name: 'itemID',
-                primay_key: false,
-                not_null: true
-            },
-            {
-                name: 'paymentID',
-                primay_key: false,
-                not_null: true
+                not_null: false
             },
             {
                 name: 'createdAt',
@@ -414,7 +439,15 @@ export class InvoiceModel extends BaseModel {
                 not_null: true
             }
         ]
-
-        super(db)
     }
+}
+
+
+export { 
+    (new TokenModel(new Database())) as TokenModel,
+    (new ProofsModel(new Database()) as ProofsModel),
+    (new CustomerModel(new Database())) as CustomerModel,
+    (new PaymentModel(new Database())) as PaymentModel,
+    (new ItemsModel(new Database()) as ItemsModel),
+    (new InvoiceModel(new Database()) as InvoiceModel)
 }

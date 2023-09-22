@@ -1,11 +1,11 @@
-import {PaymentId} from './payment.js'
+import { Payment } from './payment.js'
 
 import { generateRandomString } from '../util.js'
 
-type enum Status = {PAID = 1, OPEN = 2, DRAFT = 3, VOID = 4}
+export type enum Status = {PAID = 1, OPEN = 2, DRAFT = 3, VOID = 4}
 
-type ItemID = string
-type InvoiceID = string
+export type ItemID = string
+export type InvoiceID = string
 
 class Items {
     itemID: string
@@ -15,8 +15,9 @@ class Items {
     createdAt: Date
     UpdatedAt: Date | null
 
-    constructor (price: number, quantity: number, description: string) {
-        this.itemID = generateRandomString(10)
+    constructor (itemId: string, invoiceID: InvoiceID quantity: number, description: string) {
+        this.itemID = itemId
+        this.invoiceID = invoiceID
         this.price = price
         this.quantity = quantity
         this.description = description
@@ -24,14 +25,15 @@ class Items {
         this.UpdatedAt = null
     }
 
-    serialize() {
+    public get serialize() {
         return {
             itemID: this.itemID,
+            invoiceID: this.invoiceID,
             price: this.price,
             quantity: this.quantity,
             description: this.description,
-            createdAt: this.createdAt,
-            UpdatedAt: this.UpdatedAt
+            createdAt: this.createdAt.getTime(),
+            UpdatedAt: this.UpdatedAt ? this.UpdatedAt.getTime() : null
         }
     }
 }
@@ -42,20 +44,20 @@ class Invoice {
     description: string
     hosted_invoice_url: string; // hosted url for invoice
     items: Items[] // line items in invoice
-    paymentId: PaymentId
+    payments: Payment[]
     createdAt: Date
     clearedAt: Date | null
     amount_paid: number
     amount_due: number
     status: Status
 
-    constructor(totalSum: number, description: string, items: Items[], hosted_invoice_url: string, paymentID: PaymentID) {
+    constructor(totalSum: number, description: string, items: Items[], hosted_invoice_url: string, payments: Payment[] = []) {
         this.invoiceID = generateRandomString(15)
         this.totalSum = totalSum
         this.description = description
         this.hosted_invoice_url
         this.items = items
-        this.paymentID = paymentID
+        this.payments = payments
         this.createdAt = new Date()
         this.clearedAt = null
         this.amount_due = totalSum;
@@ -63,16 +65,16 @@ class Invoice {
         this.status = Status.OPEN
     }
 
-    serialize() {
+    public get serialize() {
         return {
             invoiceID: this.invoiceID,
             totalSum: this.totalSum,
             description: this.description,
             hosted_invoice_url: this.hosted_invoice_url,
             items: this.items.map((item)=>{return item.serialize()}),
-            paymentID: this.paymentID,
-            createdAt: this.createdAt,
-            clearedAt: this.clearedAt,
+            payments: this.payments.map((payment)=>{return payment.serialize()}),
+            createdAt: this.createdAt.getTime(),
+            clearedAt: this.clearedAt ? this.clearedAt.getTime() : null,
             amount_due: this.amount_due,
             amount_paid: this.amount_paid,
             status: this.status
@@ -80,4 +82,4 @@ class Invoice {
     }
 }
 
-export { ItemID, Invoice }
+export { Items, Invoice }
