@@ -1,8 +1,7 @@
 import {CustomerID} from './customer.js'
-
 import { generateRandomString } from '../util.js'
-
-type PaymentID = string
+import {Invoice} from './invoice.js'
+import {PaymentID, InvoiceID} from './types.js'
 
 class Payment {
     paymentID: PaymentId;
@@ -12,12 +11,12 @@ class Payment {
     amount: number;
     paidAt: Date | null
 
-    constructor(customerID: CustomerID, amount: number, invoiceID: string | null) {
+    constructor(customerID: CustomerID, invoice: Invoice) {
         this.paymentID = generateRandomString(10);
         this.customerID = customerID
-        this.invoiceID = invoiceID
+        this.invoiceID =  invoice.invoiceID
         this.confirmed = false
-        this.amount = amount
+        this.amount = invoice.amount_due
         this.paidAt = null
     }
 

@@ -1,23 +1,18 @@
+import {InvoiceStatus, ItemID, InvoiceID} from './types.js'
 import { Payment } from './payment.js'
-
 import { generateRandomString } from '../util.js'
-
-export type enum Status = {PAID = 1, OPEN = 2, DRAFT = 3, VOID = 4}
-
-export type ItemID = string
-export type InvoiceID = string
 
 class Items {
     itemID: string
+    invoiceID: InvoiceID | null, 
     price: string
     quantity: number
     description: string
     createdAt: Date
     UpdatedAt: Date | null
 
-    constructor (itemId: string, invoiceID: InvoiceID quantity: number, description: string) {
+    constructor (itemId: string, price?: number, quantity?: number, description?: string) {
         this.itemID = itemId
-        this.invoiceID = invoiceID
         this.price = price
         this.quantity = quantity
         this.description = description
@@ -28,7 +23,7 @@ class Items {
     public get serialize() {
         return {
             itemID: this.itemID,
-            invoiceID: this.invoiceID,
+            invoiceID: this.invoiceID || null,
             price: this.price,
             quantity: this.quantity,
             description: this.description,
@@ -51,13 +46,15 @@ class Invoice {
     amount_due: number
     status: Status
 
-    constructor(totalSum: number, description: string, items: Items[], hosted_invoice_url: string, payments: Payment[] = []) {
+    constructor(items?: Items[], description?: string, hosted_invoice_url?: string, payments?: Payment[], totalSum?: number) {
         this.invoiceID = generateRandomString(15)
-        this.totalSum = totalSum
+        items.map((item)=>{item.invoiceID = this.invoiceID})
+
+        this.totalSum = totalSum || items.reduce((acc, curr_value)=>{ return acc + (curr_value.price*curr_value.quantity)}, 0)
         this.description = description
         this.hosted_invoice_url
-        this.items = items
-        this.payments = payments
+        this.items = 
+        this.payments = payments || []
         this.createdAt = new Date()
         this.clearedAt = null
         this.amount_due = totalSum;
