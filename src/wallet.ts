@@ -24,7 +24,7 @@ class Wallet {
     _wallets: WalletIndexedWithMintUrl[]
     _mints: CashuMint[]
 
-    constructor(mintUrls: string[], db) {
+    constructor(mintUrls: string[]) {
         this._mints = []
         this._wallets = []
 
@@ -36,7 +36,7 @@ class Wallet {
         }
     }
 
-    async addfunds(tokenStr: string, amount?: number): number {
+    async addfunds(tokenStr: string, amount?: number){
         const response = cleanToken(getDecodedToken(encodedToken));
         tokenFromUnsupportedMint: Array<TokenEntry> = []
         const tokenEntries: Array<TokenEntry> = [];
@@ -155,7 +155,7 @@ class Wallet {
         tokens = await TokenModel.get({mintUrl: mintUrl}, ['proofID'])
         iterator = 0
         while (totalSum <= (amount) && iterator < tokens.length) {
-            proof  = await ProofsModel.get({rowid: tokens[iterator].mintUrl}, [])
+            proof  = await ProofsModel.get({rowid: tokens[iterator].mintUrl})
             totalSum += proof[0].amount
             proofs.push(proof[0])
             iterator++
