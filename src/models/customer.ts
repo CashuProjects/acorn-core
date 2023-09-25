@@ -1,23 +1,22 @@
 import {generateRandomString} from '../util.js'
-
-type Name = {
-    firstName: string
-    middleName: string
-    lastName: string
-}
-
-type CustomerID = string
-
+import {CustomerID} from './types.js'
 class Customer {
     customerID: CustomerID;
-    name: Name
+    name: string
+    lastName: string
+    firstName: string
+    middleName: string
     email: string;
 
-    constructor(email: string, lastName: string, firstName: string, middleName: string = '') {
+    constructor(email: string, lastName: string, firstName: string, middleName?: string) {
         this.customerID = generateRandomString(15);
-        this.name = {firstName, middleName, lastName}
+        this.lastName = lastName
+        this.firstName = firstName
+        this.middleName = middleName || ''
         this.email = email
     }
+
+    get name () {return `${this.lastName} ${this.firstName} ${this.middleName}`}
 
     serialize() {
         return {
