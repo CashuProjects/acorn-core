@@ -124,36 +124,36 @@ beforeAll(()=>{
     nock.disableNetConnect();
 })
 
-beforeEach(()=>{
+beforeEach( async ()=>{
     nock.cleanAll()
 
     // Truncate tables
-    TokenModel.delete()
-    ProofsModel.delete()
-    CustomerModel.delete()
-    PaymentModel.delete()
-    ItemsModel.delete()
-    InvoiceModel.delete()
+    await TokenModel.delete()
+    await ProofsModel.delete()
+    await CustomerModel.delete()
+    await PaymentModel.delete()
+    await ItemsModel.delete()
+    await InvoiceModel.delete()
 })
 
 describe('test db query', () => {
     customer = new Customer('rxbryan@gmail.com', 'elee', 'akinyemi', 'chukwuka')
     invoice = new Invoice(items[0], `purchase by ${customer.name.firstname}`)
     payment = new Payment(customer.customerID, invoice)
-    test('test add/get customer', () => {
+    test('test add/get customer', async () => {
         await paymentProcessor.addCustomer(customer)
 
         result = await paymentProcessor.getCustomer(customer.customerID)
         expect(result).toEqual(customer.serialize())
     })
 
-    test('test add/get payment', ()=>{
+    test('test add/get payment', async ()=>{
         await paymentProcessor.addPayment(payment)
         result = await paymentProcessor.getPayment(payment.paymentID)
         expect(result).toEqual(payment.serialize())
     })
 
-    test('test add/get invoice', ()=>{
+    test('test add/get invoice', async ()=>{
         await paymentProcessor.addInvoice(invoice)
         result = await paymentProcessor.getInvoice(invoice.invoiceID)
         expect(result).toEqual(invoice.serialize())
@@ -165,12 +165,12 @@ describe('test payments', ()=>{
     invoice = new Invoice(items, `purchase by ${customer.name.firstname}`)
     payment = new Payment(customer.customerID, invoice)
 
-    beforeEach(()=>{
+    beforeEach(async ()=>{
         await paymentProcessor.addInvoice(invoice)
         await paymentProcessor.addPayment(payment)
         await paymentProcessor.addCustomer(customer)
     })
-    test('receive partial payments', ()=>{
+    test('receive partial payments', async ()=>{
         nock(mintUrls[0]).post('/split').reply(200, {data: promises[0]})
         const {payment: confirmed_payment, invoice: updated_invoice} = await paymentProcessor.receivePayment(tokens[0], payment.paymentID)
         
@@ -192,7 +192,7 @@ describe('test payments', ()=>{
         expect(updated_invoice_2.status).toBe(InvoiceStatus.PAID)
     })
 
-    test('canceling invoice', ()=>{
+    test('canceling invoice', async ()=>{
         nock(mintUrls[0]).post('/split').reply(200, {data: promises[2]})
 
         const {payment: confirmed_payment, invoice: updated_invoice} = await paymentProcessor.receivePayment(tokens[2], payment.paymentID)
@@ -241,7 +241,7 @@ describe('test payments', ()=>{
         expect(updated_invoice.amount_paid).toBe(0)
     })
 
-    test('refunding payments', ()=>{
+    test('refunding payments', async ()=>{
         nock(mintUrls[0]).post('/split').reply(200, {data: promises[1]})
         const {payment: confirmed_payment_2, invoice: updated_invoice_2} = await paymentProcessor.receivePayment(tokens[1], payment.paymentID)
         nock(mintUrls[0])

@@ -46,12 +46,12 @@ beforeAll(()=>{
 beforeEach(()=>{
     nock.cleanAll()
     // Truncate tables
-    TokenModel.delete()
-    ProofsModel.delete()
+    await TokenModel.delete()
+    await ProofsModel.delete()
 })
 
-describe('test wallet api', async () => {
-    test('test proofs handling', ()=>{
+describe('test wallet api', () => {
+    test('test proofs handling', async ()=>{
         await wallet.storeProofs(proofs, mintUrls[0])
         balance = await wallet.getBalance()
 
