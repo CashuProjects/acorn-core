@@ -5,9 +5,10 @@ import {
 } from '@cashu/cashu-ts'
 
 import {CustomerModel, PaymentModel, ItemsModel, InvoiceModel} from './models/model.js'
-import {Customer, CustomerID} from './models/customer.js'
-import {Payment, PaymentId} from './models/payment.js'
-import {Item, ItemID, Invoice, InvoiceID, Status} from './models/invoice.js'
+import {Customer} from './models/customer.js'
+import {Payment} from './models/payment.js'
+import {Item, Invoice} from './models/invoice.js'
+import {ItemID, InvoiceID, InvoiceInvoiceStatus, CustomerID, PaymentId} from './models/types.js'
 import {Wallet} from './wallet.js'
 import {cleanToken} from './util.js'
 
@@ -18,15 +19,15 @@ class PaymentProcessor {
     }
 
     async getCustomer(customerId: CustomerID) {
-        return (await CustomerModel.get({customerID: customerId}, []))[0]
+        return (await CustomerModel.get({customerID: customerId}))[0]
     }
 
     async getInvoice(invoiceId: InvoiceID) {
-        return (await InvoiceModel.get({invoiceID: invoiceId}, []))[0]
+        return (await InvoiceModel.get({invoiceID: invoiceId}))[0]
     }
 
     async getPayment(paymentId: PaymentId) {
-        return (await PaymentModel.get({paymentID: PaymentId}, [])[0])
+        return (await PaymentModel.get({paymentID: PaymentId})[0])
     }
 
     async createReceipt(invoice: Invoice) {
@@ -42,6 +43,9 @@ class PaymentProcessor {
     }
     
     async addInvoice(invoice: Invoice) {
+        for (item of Invoice.items) {
+            await ItemsModel.insert(item.serialize())
+        }
         await InvoiceModel.insert(invoice.serialize())
     }
 
@@ -74,7 +78,7 @@ class PaymentProcessor {
         if (invoice.amount_due == 0) {
             invoice.clearedAt = Date.now()
             invoice.payments.push()
-            invoice.status = Status.PAID
+            invoice.status = InvoiceStatus.PAID
         }
 
         await InvoiceModel.update(
@@ -88,7 +92,7 @@ class PaymentProcessor {
     async cancelInvoice(invoiceId: InvoiceID , lnInvoice?: string): Token {
         invoice = await this.getInvoice(invoiceId)
 
-        payments = PaymentModel.get({invoiceID: invoiceId}, [])
+        payments = PaymentModel.get({invoiceID: invoiceId})
 
         tokenEntries = []
         totalSum = 0
@@ -97,6 +101,7 @@ class PaymentProcessor {
         iterator = 0
         while (getProof && (iterator < this._wallet._mints.length)) {
             response = await this._wallet.getProofs(proofAmount, this.wallet._mints[iterator])
+            totalSum += response.totalSum
             if (totalSum == invoice.amount_paid) {
                 getProof = false
             }
@@ -115,11 +120,14 @@ class PaymentProcessor {
 
         // Todo: Payout to LnInvoice
 
-        await InvoiceModel.update({status: Status.VOID, amount_due: 0, amount_paid: 0}, {invoiceID: invoice.invoiceID})
+        if (totalSum != invoice.amount_paid)
+            throw new Error(`not enough proofs to fulfill refund of payments in invoice: ${invoiceId}`)
+
+        await InvoiceModel.update({status: InvoiceStatus.VOID, amount_due: 0, amount_paid: 0}, {invoiceID: invoice.invoiceID})
 
         // Delete proofs from DB
         tokenEntries.map((entry)=>{ await this._wallet.deleteProofs(entry.proofs)})
-        return {token: {token: tokenEntries}}
+        return {token: {token: tokenEntries}, totalSum}
     }
 
     async refundPayment(paymentId: PaymentId, mint: string) {
@@ -152,6 +160,9 @@ class PaymentProcessor {
 
         // Todo: Payout to LnInvoice
 
+        if (totalSum != payment.amount)
+            throw new Error(`not enough proofs to fulfill refund of payment: ${paymentId}`)
+
         await InvoiceModel.update(
             {
                 amount_due: invoice.amount_due+payment.amount,
@@ -162,7 +173,7 @@ class PaymentProcessor {
 
         // Delete proofs from DB
         tokenEntries.map((entry)=>{this._wallet.deleteProofs(entry.proofs)})
-        return {token: {token: tokenEntries}}
+        return {token: {token: tokenEntries}, totalSum}
     }
 }
 
